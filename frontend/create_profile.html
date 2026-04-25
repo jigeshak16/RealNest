@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Roommate Profile</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background:#f4f4f4;
+            padding:30px;
+        }
+
+        .container {
+            width:450px;
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 0 8px gray;
+        }
+
+        input, select, button {
+            width:100%;
+            padding:12px;
+            margin-bottom:12px;
+            border-radius:8px;
+            border:1px solid #ccc;
+            font-size:15px;
+        }
+
+        button {
+            background:black;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+
+        button:hover {
+            background:#333;
+        }
+
+        .back-btn {
+            width:auto;
+            padding:10px 18px;
+            background:#16215c;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            margin-bottom:20px;
+        }
+
+        h2 {
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+
+<button class="back-btn" onclick="goBack()">← Back to Dashboard</button>
+
+<div class="container">
+    <h2>Create Roommate Profile</h2>
+
+    <!-- USER ID -->
+    <input id="userId" placeholder="User ID">
+
+    <!-- FOOD -->
+    <select id="foodType">
+        <option value="VEG">VEG</option>
+        <option value="NON_VEG">NON_VEG</option>
+        <option value="EGGETARIAN">EGGETARIAN</option>
+    </select>
+
+    <!-- SMOKING -->
+    <select id="smoking">
+        <option value="false">NO SMOKING</option>
+        <option value="true">SMOKING</option>
+    </select>
+
+    <!-- DRINKING -->
+    <select id="drinking">
+        <option value="NO">NO</option>
+        <option value="OCCASIONAL">OCCASIONAL</option>
+        <option value="FREQUENT">FREQUENT</option>
+    </select>
+
+    <!-- SLEEP -->
+    <select id="sleepSchedule">
+        <option value="EARLY_BIRD">EARLY BIRD</option>
+        <option value="NIGHT_OWL">NIGHT OWL</option>
+        <option value="FLEXIBLE">FLEXIBLE</option>
+    </select>
+
+    <!-- CLEANLINESS -->
+    <select id="cleanliness">
+        <option value="LOW">LOW</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="HIGH">HIGH</option>
+    </select>
+
+    <!-- BUDGET -->
+    <input id="minBudget" placeholder="Min Budget">
+    <input id="maxBudget" placeholder="Max Budget">
+
+    <!-- GUESTS -->
+    <select id="guests">
+        <option value="NEVER">NEVER</option>
+        <option value="OCCASIONAL">OCCASIONAL</option>
+        <option value="FREQUENT">FREQUENT</option>
+    </select>
+
+    <!-- WORK -->
+    <select id="workType">
+        <option value="STUDENT">STUDENT</option>
+        <option value="WORKING">WORKING</option>
+        <option value="REMOTE">REMOTE</option>
+        <option value="HYBRID">HYBRID</option>
+    </select>
+
+    <!-- PETS -->
+    <select id="pets">
+        <option value="false">NO PETS</option>
+        <option value="true">PETS ALLOWED</option>
+    </select>
+
+    <!-- GENDER -->
+    <select id="gender">
+        <option value="ANY">ANY</option>
+        <option value="MALE">MALE</option>
+        <option value="FEMALE">FEMALE</option>
+    </select>
+
+    <!-- AGE RANGE -->
+    <input id="ageMin" placeholder="Preferred Age Min">
+    <input id="ageMax" placeholder="Preferred Age Max">
+
+    <button onclick="saveProfile()">Save Profile</button>
+</div>
+
+<script>
+    function saveProfile() {
+
+        const payload = {
+            userId: parseInt(document.getElementById("userId").value),
+
+            foodType: document.getElementById("foodType").value,
+            smoking: document.getElementById("smoking").value === "true",
+            drinking: document.getElementById("drinking").value,
+            sleepSchedule: document.getElementById("sleepSchedule").value,
+            cleanlinessLevel: document.getElementById("cleanliness").value,
+
+            minBudget: parseFloat(document.getElementById("minBudget").value),
+            maxBudget: parseFloat(document.getElementById("maxBudget").value),
+
+            guestsAllowed: document.getElementById("guests").value,
+            workType: document.getElementById("workType").value,
+            petsAllowed: document.getElementById("pets").value === "true",
+
+            preferredGender: document.getElementById("gender").value,
+            preferredAgeMin: parseInt(document.getElementById("ageMin").value),
+            preferredAgeMax: parseInt(document.getElementById("ageMax").value)
+        };
+
+        fetch("http://localhost:8080/api/preferences/save", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                window.location.href = "user_dashboard.html";
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to save profile");
+            });
+    }
+
+    function goBack() {
+        window.location.href = "user_dashboard.html";
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Partners - Realnest</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f5f7fb;
+            margin:0;
+            padding:30px;
+        }
+
+        .top-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:30px;
+        }
+
+        .heading{
+            font-size:36px;
+            font-weight:bold;
+            color:#16215c;
+        }
+
+        .back-btn{
+            padding:12px 18px;
+            background:#16215c;
+            color:white;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        .info-box{
+            background:white;
+            padding:20px;
+            border-radius:15px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.1);
+            width:450px;
+            margin-bottom:25px;
+        }
+
+        .card{
+            background:white;
+            padding:25px;
+            border-radius:18px;
+            box-shadow:0 6px 18px rgba(0,0,0,0.12);
+            width:450px;
+            margin-top:20px;
+        }
+
+        .name{
+            font-size:22px;
+            font-weight:bold;
+            color:#16215c;
+        }
+
+        .percent{
+            font-size:18px;
+            margin:10px 0;
+        }
+
+        .chat-btn{
+            width:100%;
+            padding:12px;
+            background:#16215c;
+            color:white;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        .disabled{
+            background:gray;
+            cursor:not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="heading">💕 Review Partners</div>
+
+    <button class="back-btn" onclick="goBack()">
+        ← Dashboard
+    </button>
+</div>
+
+<div class="info-box">
+    Finding best matches based on your preferences...
+</div>
+
+<div id="results"></div>
+
+<script>
+    window.onload = loadMatches;
+
+    function loadMatches() {
+
+        const currentUserId = localStorage.getItem("loggedInUserId");
+
+        if (!currentUserId) {
+            alert("Please login first");
+            window.location.href = "login.html";
+            return;
+        }
+
+        fetch("http://localhost:8080/api/users-with-preferences")   // ✅ FIXED
+            .then(res => res.json())
+            .then(users => {
+
+                const currentUser = users.find(u => u.id == currentUserId);
+
+                if (!currentUser) {
+                    document.getElementById("results").innerHTML =
+                        "<p>Please create your profile first.</p>";
+                    return;
+                }
+
+                let output = "";
+
+                users.forEach(user => {
+
+                    if (user.id == currentUserId) return;
+
+                    const score = calculateScore(currentUser, user);
+
+                    let button = "";
+
+                    if (score >= 75) {
+                        button = `
+                        <button class="chat-btn"
+                            onclick="startChat(${user.id}, '${user.fullName}')">
+                            💬 Chat
+                        </button>
+                    `;
+                    } else {
+                        button = `
+                        <button class="chat-btn disabled" disabled>
+                            🔒 Low Match
+                        </button>
+                    `;
+                    }
+
+                    output += `
+                    <div class="card">
+                        <div class="name">${user.fullName}</div>
+
+                        <div class="percent"
+                            style="color:${score >= 75 ? 'green' : 'red'}">
+                            💖 ${score}% Match
+                        </div>
+
+                        ${button}
+                    </div>
+                `;
+                });
+
+                document.getElementById("results").innerHTML =
+                    output || "<p>No matches found</p>";
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("results").innerHTML =
+                    "<p>Error loading matches</p>";
+            });
+    }
+
+    function calculateScore(u1, u2) {
+        let score = 0;
+
+        if (u1.foodType === u2.foodType) score += 20;
+        if (u1.smoking === u2.smoking) score += 15;
+        if (u1.drinking === u2.drinking) score += 15;
+        if (u1.sleepSchedule === u2.sleepSchedule) score += 15;
+        if (u1.cleanlinessLevel === u2.cleanlinessLevel) score += 10;
+
+        if (Math.abs(u1.maxBudget - u2.maxBudget) <= 2000) score += 15;
+
+        return score;
+    }
+
+    function startChat(userId, name) {
+        localStorage.setItem("chatUserId", userId);
+        localStorage.setItem("chatUserName", name);
+
+        window.location.href = "chat.html";
+    }
+
+    function goBack() {
+        window.location.href = "user_dashboard.html";
+    }
+</script>
+
+</body>
+</html>

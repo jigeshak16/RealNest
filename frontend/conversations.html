@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Conversations</title>
+    <style>
+        body{
+            font-family: Arial;
+            background:#f4f4f4;
+            padding:20px;
+        }
+
+        .container{
+            max-width:600px;
+            margin:auto;
+        }
+
+        .card{
+            background:white;
+            padding:15px;
+            margin-bottom:10px;
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.1);
+            cursor:pointer;
+        }
+
+        .name{
+            font-weight:bold;
+            font-size:18px;
+        }
+
+        .msg{
+            color:#555;
+            margin-top:5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>💬 Conversations</h2>
+
+<div id="chatList"></div>
+
+<script>
+
+    const currentUserId = localStorage.getItem("loggedInUserId");
+
+    function loadConversations() {
+
+        fetch(`http://localhost:8080/api/messages/inbox/${currentUserId}`)
+            .then(res => res.json())
+            .then(messages => {
+
+                let map = {};
+
+                // group by matchId (latest message per chat)
+                messages.forEach(msg => {
+                    const matchId = msg.matchId;
+
+                    if (!map[matchId]) {
+                        map[matchId] = msg;
+                    }
+                });
+
+                let html = "";
+
+                Object.values(map).forEach(msg => {
+
+                    // ✅ extract both IDs
+                    let ids = msg.matchId.split("_");
+
+                    // ✅ find other user
+                    let otherUserId =
+                        ids[0] == currentUserId ? ids[1] : ids[0];
+
+                    // ✅ get users list (you must store this during login)
+                    const users = JSON.parse(localStorage.getItem("allUsers")) || [];
+
+                    let otherUser = users.find(u => u.id == otherUserId);
+
+                    let otherUserName = otherUser ? otherUser.fullName : "User";
+
+                    html += `
+                    <div class="card"
+                        onclick="openChat('${msg.matchId}', '${otherUserName}', ${otherUserId})">
+
+                        <div class="name">${otherUserName}</div>
+                        <div class="msg">${msg.content}</div>
+
+                    </div>
+                `;
+                });
+
+                document.getElementById("chatList").innerHTML =
+                    html || "<p>No conversations yet</p>";
+            });
+    }
+
+    // ✅ open chat
+    function openChat(matchId, name, userId) {
+
+        localStorage.setItem("chatUserId", userId);
+        localStorage.setItem("chatUserName", name);
+
+        window.location.href = "chat.html";
+    }
+
+    // load on start
+    loadConversations();
+
+</script>
+
+</body>
+</html>

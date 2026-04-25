@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Flats - Realnest</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f5f7fb;
+            margin:0;
+            padding:30px;
+        }
+
+        .top-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:30px;
+        }
+
+        .heading{
+            font-size:38px;
+            font-weight:bold;
+            color:#16215c;
+        }
+
+        .back-btn{
+            padding:12px 18px;
+            background:#16215c;
+            color:white;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        .flats-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(350px,1fr));
+            gap:25px;
+        }
+
+        .flat-card{
+            background:white;
+            border-radius:18px;
+            overflow:hidden;
+            box-shadow:0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .flat-img{
+            width:100%;
+            height:240px;
+            object-fit:cover;
+        }
+
+        .slider{
+            position:relative;
+        }
+
+        .left, .right{
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            background:rgba(0,0,0,0.6);
+            color:white;
+            border:none;
+            padding:8px 12px;
+            cursor:pointer;
+            border-radius:50%;
+        }
+
+        .left{ left:10px; }
+        .right{ right:10px; }
+
+        .flat-content{
+            padding:22px;
+        }
+
+        .flat-title{
+            font-size:24px;
+            font-weight:bold;
+            color:#16215c;
+        }
+
+        .flat-info{
+            font-size:15px;
+            margin:8px 0;
+        }
+
+        .status{
+            font-weight:bold;
+            margin-top:12px;
+        }
+
+        .book-btn{
+            width:100%;
+            padding:12px;
+            background:#16215c;
+            color:white;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        #modal{
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.9);
+            justify-content:center;
+            align-items:center;
+        }
+
+        #modal img{
+            max-width:90%;
+            max-height:90%;
+        }
+
+        #modal span{
+            position:absolute;
+            top:20px;
+            right:30px;
+            color:white;
+            font-size:30px;
+            cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="heading">🏠 Available Flats</div>
+    <button class="back-btn" onclick="goBack()">← Back</button>
+</div>
+
+<div class="flats-grid" id="flats"></div>
+
+<div id="modal" onclick="closeImage()">
+    <span>✖</span>
+    <img id="modalImg">
+</div>
+
+<script>
+
+    const imageMap = {};
+    const indexMap = {};
+
+
+    // ✅ UPDATED IMAGE HANDLER (FINAL FIX)
+    function initImages(flat){
+
+        let images = [];
+
+        if(flat.images){
+            images = flat.images.split(",")
+                .map(img => img.trim())
+                .filter(img => img && !img.startsWith("blob:"));
+        }
+
+        if(images.length === 0){
+            images = ["https://via.placeholder.com/400x300?text=No+Image"];
+        }
+
+        imageMap[flat.id] = images;
+        indexMap[flat.id] = 0;
+
+        const img = document.getElementById(`img-${flat.id}`);
+        if(!img) return;
+
+        img.src = images[0];
+
+        img.onerror = () => {
+            img.src = "https://via.placeholder.com/400x300?text=Error";
+        };
+    }
+
+
+    // NEXT IMAGE
+    function nextImg(flatId){
+        if(!imageMap[flatId]) return;
+
+        indexMap[flatId]++;
+        indexMap[flatId] %= imageMap[flatId].length;
+
+        document.getElementById(`img-${flatId}`).src =
+            imageMap[flatId][indexMap[flatId]];
+    }
+
+
+    // PREVIOUS IMAGE
+    function prevImg(flatId){
+        if(!imageMap[flatId]) return;
+
+        indexMap[flatId]--;
+        if(indexMap[flatId] < 0)
+            indexMap[flatId] = imageMap[flatId].length - 1;
+
+        document.getElementById(`img-${flatId}`).src =
+            imageMap[flatId][indexMap[flatId]];
+    }
+
+
+    // MODAL
+    function openImage(src){
+        document.getElementById("modal").style.display = "flex";
+        document.getElementById("modalImg").src = src;
+    }
+
+    function closeImage(){
+        document.getElementById("modal").style.display = "none";
+    }
+
+
+    // FETCH FLATS
+    fetch("http://localhost:8080/api/flats")
+        .then(res => res.json())
+        .then(async data => {
+
+            let output = "";
+
+            for(const flat of data){
+
+                const isBooked = await fetch(
+                    `http://localhost:8080/api/bookings/status/${flat.id}`
+                ).then(res=>res.json());
+
+                let statusHtml = "";
+                let buttonHtml = "";
+
+                if(isBooked){
+                    statusHtml = `<p class="status" style="color:red;">❌ UNAVAILABLE</p>`;
+                    buttonHtml = `<button class="book-btn" disabled style="background:gray;">Already Booked</button>`;
+                } else {
+                    statusHtml = `<p class="status" style="color:green;">✅ AVAILABLE</p>`;
+
+                    buttonHtml = `
+            <button class="book-btn" onclick="bookFlat(
+                ${flat.id},
+                '${flat.ownerName}',
+                '${flat.ownerPhone}',
+                '${flat.ownerEmail}'
+            )">
+                Book Flat
+            </button>`;
+                }
+
+                output += `
+        <div class="flat-card">
+            <div class="slider">
+                <img id="img-${flat.id}" class="flat-img" onclick="openImage(this.src)">
+                <button class="left" onclick="prevImg(${flat.id})">❮</button>
+                <button class="right" onclick="nextImg(${flat.id})">❯</button>
+            </div>
+
+            <div class="flat-content">
+                <div class="flat-title">${flat.title}</div>
+                <div class="flat-info">📍 ${flat.address}, ${flat.city}</div>
+                <div class="flat-info">💰 ₹ ${flat.rentAmount}</div>
+                <div class="flat-info">🛏 ${flat.flatType}</div>
+                <div class="flat-info">${flat.description || ""}</div>
+                ${statusHtml}
+                ${buttonHtml}
+            </div>
+        </div>`;
+            }
+
+            document.getElementById("flats").innerHTML = output;
+
+            data.forEach(flat => initImages(flat));
+        });
+
+
+    // BOOK
+    function bookFlat(flatId, ownerName, ownerPhone, ownerEmail){
+        const userId = localStorage.getItem("loggedInUserId");
+
+        if(!userId){
+            alert("Please login first");
+            return;
+        }
+
+        fetch("http://localhost:8080/api/bookings/book",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({flatId,userId})
+        })
+            .then(res=>res.text())
+            .then(()=>{
+                alert(`🎉 Flat Booked!\n\n👤 ${ownerName}\n📞 ${ownerPhone}\n📧 ${ownerEmail}`);
+                location.reload();
+            });
+    }
+
+    function goBack(){
+        window.location.href="user_dashboard.html";
+    }
+
+</script>
+
+</body>
+</html>

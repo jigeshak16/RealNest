@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - Realnest</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px gray;
+        }
+
+        input, select, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏠 Post Flat Details</h1>
+
+    <input type="text" id="title" placeholder="Flat Title">
+    <textarea id="description" placeholder="Description"></textarea>
+    <input type="text" id="address" placeholder="Address">
+    <input type="text" id="city" placeholder="City">
+    <input type="number" id="rentAmount" placeholder="Rent Amount">
+
+    <!-- BHK -->
+    <label>Flat Type</label>
+    <select id="flatType" onchange="generateBedrooms()">
+        <option value="1">1 BHK</option>
+        <option value="2">2 BHK</option>
+        <option value="3">3 BHK</option>
+    </select>
+
+    <select id="furnishing">
+        <option value="UNFURNISHED">Unfurnished</option>
+        <option value="SEMI_FURNISHED">Semi Furnished</option>
+        <option value="FULLY_FURNISHED">Fully Furnished</option>
+    </select>
+
+    <input type="number" id="availableBeds" placeholder="Available Beds">
+
+    <!-- IMAGES -->
+    <label>Living Room</label>
+    <input type="file" accept="image/*">
+
+    <label>Kitchen</label>
+    <input type="file" accept="image/*">
+
+    <label>Bathroom</label>
+    <input type="file" accept="image/*">
+
+    <!-- BEDROOMS -->
+    <div id="bedrooms"></div>
+
+    <button onclick="submitFlat()">Post Flat</button>
+</div>
+
+<script>
+
+    function generateBedrooms(){
+        const count = parseInt(document.getElementById("flatType").value);
+        let html = "";
+
+        for(let i=1;i<=count;i++){
+            html += `
+        <label>Bedroom ${i}</label>
+        <input type="file" accept="image/*"><br>
+        `;
+        }
+
+        document.getElementById("bedrooms").innerHTML = html;
+    }
+
+    generateBedrooms();
+
+
+    // ✅ FINAL SUBMIT (PERMANENT IMAGE STORAGE)
+    async function submitFlat(){
+
+        const ownerId = localStorage.getItem("loggedInUserId");
+
+        if (!ownerId) {
+            alert("Please login first");
+            return;
+        }
+
+        const formData = new FormData();
+
+        // ✅ ALL FLAT DATA
+        formData.append("title", document.getElementById("title").value);
+        formData.append("description", document.getElementById("description").value);
+        formData.append("address", document.getElementById("address").value);
+        formData.append("city", document.getElementById("city").value);
+        formData.append("rentAmount", document.getElementById("rentAmount").value);
+        formData.append("flatType", document.getElementById("flatType").value);
+        formData.append("furnishing", document.getElementById("furnishing").value);
+        formData.append("availableBeds", document.getElementById("availableBeds").value);
+        formData.append("ownerId", ownerId);
+
+        // ✅ ALL IMAGES (living, kitchen, bathroom + bedrooms)
+        document.querySelectorAll("input[type='file']").forEach(input => {
+            if(input.files.length > 0){
+                formData.append("files", input.files[0]);
+            }
+        });
+
+        fetch("http://localhost:8080/api/flats/add-with-images", {
+            method: "POST",
+            body: formData
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert("✅ Flat posted with images!");
+                window.location.href = "user_dashboard.html";
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Failed to upload flat");
+            });
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Register - Realnest</title>
+    <style>
+        body{
+            font-family: Arial;
+            background:#f4f4f4;
+        }
+
+        .container{
+            width:500px;
+            margin:40px auto;
+            background:white;
+            padding:30px;
+            border-radius:12px;
+            box-shadow:0 0 10px gray;
+        }
+
+        input,select,textarea,button{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            border-radius:8px;
+            border:1px solid #ccc;
+        }
+
+        button{
+            background:black;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Create Account</h2>
+
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <input type="text" id="fullName" placeholder="Full Name">
+    <input type="text" id="phone" placeholder="Phone">
+
+    <select id="role">
+        <option value="owner">Owner</option>
+        <option value="user">User</option>
+    </select>
+
+    <select id="gender">
+        <option>MALE</option>
+        <option>FEMALE</option>
+        <option>OTHER</option>
+    </select>
+
+    <input type="number" id="age" placeholder="Age">
+    <textarea id="bio" placeholder="Bio"></textarea>
+    <input type="text" id="location" placeholder="Location">
+
+    <button onclick="register()">Register</button>
+</div>
+
+<script>
+    function register() {
+        const role = document.getElementById("role").value.toLowerCase();
+
+        const data = {
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value.trim(),
+            fullName: document.getElementById("fullName").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            gender: document.getElementById("gender").value,
+            age: parseInt(document.getElementById("age").value),
+            bio: document.getElementById("bio").value.trim(),
+            location: document.getElementById("location").value.trim()
+        };
+
+        fetch(`http://localhost:8080/api/${role}/signup`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.text())
+            .then(result => {
+                alert(result);
+
+                if(result.includes("Success")){
+                    window.location.href = "login.html";
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert("Registration failed");
+            });
+    }
+</script>
+
+</body>
+</html>
